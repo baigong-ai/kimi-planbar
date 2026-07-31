@@ -48,6 +48,13 @@ command = "~/.kimi-code/scripts/quota-status.py"
 
 在 TUI 里运行 `/reload-tui`（或重启 Kimi Code）生效。
 
+**Windows 用户注意**：`~` 不会被展开，且 `.py` 文件不能直接执行，command 要写成绝对路径并显式加 `python` 前缀：
+
+```toml
+[status_line]
+command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
+```
+
 ### 凭证从哪里来
 
 无需任何配置。后台刷新进程按顺序读取：
@@ -90,6 +97,15 @@ command = "~/.kimi-code/scripts/quota-status.py"
 - Kimi Code 默认只绑 127.0.0.1；脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`，不限端口
 
 ## 更新日志
+
+### v1.1.1
+
+Windows 修复，来自 [@shawn-0106t](https://github.com/shawn-0106t) 的实测报告（issue #1）：
+
+- **修复**：渲染路径超时——Windows 上 Python 启动本身就慢，顶层的 `urllib.request` / `subprocess` 导入把渲染推到 300ms 上限之外；两个导入改为延迟到后台刷新路径里，渲染降到 150–210ms
+- **修复**：`UnicodeEncodeError`——快照里的 `cwd` 可能带孤立代理字符（CLI 对非 ASCII 路径的编码问题），`print()` 直接崩溃；现在渲染前把 stdout 重配为 UTF-8 + `errors='replace'`（顺带解决 Windows 管道默认本地代码页导致 `·` 乱码的问题）
+- **文档**：Windows 安装说明——command 需用绝对路径 + 显式 `python` 前缀（`~` 不展开、`.py` 不可直接执行）
+- 报告中的快照 schema 问题（`contextUsage` / `gitBranch`）已在 v1.1.0 修复，本次不重复合入
 
 ### v1.1.0
 

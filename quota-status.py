@@ -6,10 +6,8 @@
 # (network fetch + atomic replace). Colors: green <60%, yellow 60-84%, red >=85%.
 import json
 import os
-import subprocess
 import sys
 import time
-import urllib.request
 from datetime import datetime, timezone
 
 HOME = os.path.expanduser('~/.kimi-code')
@@ -66,6 +64,7 @@ def load_token():
 
 
 def fetch_quota():
+    import urllib.request  # deferred: only the background refresher needs it
     key = load_token()
     if not key:
         return None
@@ -139,6 +138,7 @@ def maybe_refresh():
     # storm, and a failed refresh is retried after RETRY seconds.
     t = time.time() - TTL + RETRY
     os.utime(CACHE, (t, t))
+    import subprocess  # deferred: keep the render path under the 300ms cap
     subprocess.Popen([sys.executable, os.path.abspath(__file__), '--refresh'],
                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True)
@@ -163,6 +163,12 @@ def main():
     if '--refresh' in sys.argv:
         refresh()
         return
+    # Windows pipes default to the locale codepage; the TUI expects UTF-8.
+    # 'replace' keeps stray lone surrogates (mojibake paths) from crashing print.
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
     try:
         d = json.load(sys.stdin)
     except Exception:

@@ -48,6 +48,13 @@ command = "~/.kimi-code/scripts/quota-status.py"
 
 Run `/reload-tui` in the TUI (or restart Kimi Code) to apply.
 
+**Windows note:** `~` is not expanded and `.py` files aren't directly executable there — use an absolute path with an explicit `python` prefix:
+
+```toml
+[status_line]
+command = "python C:/Users/<you>/.kimi-code/scripts/quota-status.py"
+```
+
 ### How it gets credentials
 
 No configuration needed. The refresher reads, in order:
@@ -90,6 +97,15 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 - Kimi Code binds to 127.0.0.1 by default; the userscript matches `http://127.0.0.1/*` and `http://localhost/*`, any port
 
 ## Changelog
+
+### v1.1.1
+
+Windows fixes, from a tested report by [@shawn-0106t](https://github.com/shawn-0106t) (issue #1):
+
+- **Fixed**: render path blowing the 300ms cap — Python startup alone is slow on Windows, and the top-level `urllib.request` / `subprocess` imports pushed a full render past the cap; both imports are now deferred into the background-refresh path, bringing renders down to 150–210ms
+- **Fixed**: `UnicodeEncodeError` — the snapshot's `cwd` can contain lone surrogates (a CLI-side encoding bug for non-ASCII paths), crashing `print()` on every render; stdout is now reconfigured to UTF-8 with `errors='replace'` before rendering (also fixes the `·` separator being garbled by Windows' locale codepage pipes)
+- **Docs**: Windows install note — the command needs an absolute path with an explicit `python` prefix (`~` isn't expanded, `.py` isn't executable)
+- The snapshot-schema part of the report (`contextUsage` / `gitBranch`) was already fixed in v1.1.0 and is not re-merged
 
 ### v1.1.0
 
