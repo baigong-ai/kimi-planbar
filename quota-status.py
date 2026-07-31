@@ -91,7 +91,28 @@ def fetch_quota():
         lim = float(t.get('limit', 0)) or 1
         parts.append(seg('month', float(t.get('used', 0)) / lim * 100,
                          parse_iso(t.get('resetTime'))))
-    return 'Kimi ' + ' \033[90m·\033[0m '.join(parts) if parts else None
+    return ' \033[90m·\033[0m '.join(parts) if parts else None
+
+
+def thinking_seg(model_name):
+    """Render the thinking level from config.toml (not in the stdin snapshot)."""
+    try:
+        import tomllib
+        with open(os.path.join(HOME, 'config.toml'), 'rb') as f:
+            cfg = tomllib.load(f)
+    except Exception:
+        return None
+    th = cfg.get('thinking') or {}
+    if th.get('enabled') is False:
+        return '\033[90moff\033[0m'
+    eff = th.get('effort')
+    if not eff and model_name:
+        for m in (cfg.get('models') or {}).values():
+            if model_name in (m.get('display_name'), m.get('model')):
+                eff = (m.get('overrides') or {}).get('default_effort') \
+                    or m.get('default_effort')
+                break
+    return f'\033[36m{eff}\033[0m' if eff else None
 
 
 def refresh():
@@ -155,19 +176,20 @@ def main():
 
     parts = []
 
+    mode = d.get('permissionMode')
+    if isinstance(mode, str) and mode:
+        mc = {'yolo': '31', 'auto': '33', 'manual': '32'}.get(mode, '37')
+        parts.append(f'\033[{mc}m{mode}\033[0m')
+
     model = d.get('model')
     if isinstance(model, dict):
         model = model.get('display_name') or model.get('id') or model.get('name')
     if model:
         parts.append(f'\033[36m{model}\033[0m')
 
-    p = (dig(d, 'usage', 'used_percentage') or dig(d, 'usage', 'percentage')
-         or dig(d, 'context_window', 'used_percentage')
-         or dig(d, 'context', 'used_percentage'))
-    if isinstance(p, (int, float)):
-        if p <= 1 and dig(d, 'usage', 'used') is not None:
-            p *= 100
-        parts.append(f'\033[{col(p)}mCtx {p:.1f}%\033[0m')
+    t = thinking_seg(model if isinstance(model, str) else None)
+    if t:
+        parts.append(t)
 
     q = read_cache()
     maybe_refresh()
@@ -179,7 +201,7 @@ def main():
         home = os.path.expanduser('~')
         parts.append(cwd.replace(home, '~', 1) if cwd.startswith(home) else cwd)
 
-    git = d.get('git') or dig(d, 'git', 'branch')
+    git = d.get('git') or d.get('gitBranch') or dig(d, 'git', 'branch')
     if isinstance(git, dict):
         git = git.get('branch')
     if git:

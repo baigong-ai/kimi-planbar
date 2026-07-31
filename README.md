@@ -6,12 +6,12 @@ Plan-quota display for [Kimi Code](https://www.kimi.com/code/) CLI: a **TUI stat
 
 > This project is based on [cc-planbar](https://github.com/baigong-ai/cc-planbar) (a quota statusline for Claude Code). The provider detection, quota-endpoint logic, color thresholds, and caching design are adapted from it; kimi-planbar ports the idea to Kimi Code's own extension points.
 
-Shows: **context window usage % + plan quota** (5-hour window / weekly limit, with reset times), color-coded by usage: green <60%, yellow 60–84%, red ≥85%.
+Shows: **permission mode (manual/auto/yolo) + model + thinking effort + plan quota** (5-hour window / weekly limit, with reset times). The mode is color-coded by risk (manual green / auto yellow / yolo red); quota is color-coded by usage: green <60%, yellow 60–84%, red ≥85%.
 
 TUI statusline:
 
 ```
-k3-256k | Ctx 24.0% | Kimi 5h 15% (rst 03:44) · week 69% (rst 07/31 05:44) | ~/code/proj | main
+auto | K3-256k | high | 5h 15% (rst 03:44) · week 69% (rst 07/31 05:44) | ~/code/proj | main
 ```
 
 Web UI: a floating badge in the top-right corner — `5h 15% (rst 03:44) · week 69% (rst 07/31 05:44)`, click to refresh.
@@ -59,6 +59,8 @@ and calls `GET https://api.kimi.com/coding/v1/usages` with it.
 
 ### Details
 
+- Segments, left to right: permission mode (snapshot `permissionMode`, reflects in-session switches live) → model → thinking effort → quota → cwd → git branch (snapshot `gitBranch`)
+- The thinking effort is not in the stdin snapshot; the script reads it from `~/.kimi-code/config.toml` `[thinking]`: `effort`, falling back to the current model's `default_effort`; shows `off` when `enabled = false`. Note this reflects the config file — transient in-session changes that aren't written back won't show
 - Cache: `~/.kimi-code/scripts/quota-cache`, TTL 5 minutes; failed refreshes retry after 30s
 - The last stdin snapshot Kimi Code passed in is kept at `~/.kimi-code/scripts/last-stdin.json` for debugging
 - Monthly quota: shown automatically as `month X%` when the `totalQuota` field is populated
@@ -86,6 +88,25 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 - The script relies on two web-UI internals: the `kimi-web.server-credential` localStorage key and the `/api/v1/oauth/usage` endpoint. If a future Kimi Code version changes either, the badge shows `quota ?` — updating the script should fix it
 - Badge position: edit `top:8px; right:12px` in the script if it overlaps other UI
 - Kimi Code binds to 127.0.0.1 by default; the userscript matches `http://127.0.0.1/*` and `http://localhost/*`, any port
+
+## Changelog
+
+### v1.1.0
+
+Why: v1.0.0 was written against an assumed stdin-snapshot schema. Installed on a real setup, the fields didn't match — `model` is a plain string, the git branch arrives as `gitBranch`, and context usage as `contextUsage` (a 0–1 fraction) — so the Ctx and branch segments silently vanished. While fixing the schema, the statusline was redesigned into a more practical layout based on real use.
+
+What changed:
+
+- **Fixed**: field parsing adapted to the real snapshot schema (`gitBranch`, string `model`)
+- **Added**: permission-mode segment, pinned to the front, from the snapshot `permissionMode` — `manual` green / `auto` yellow / `yolo` red; in-session mode switches show up live
+- **Added**: thinking-effort segment. The snapshot doesn't carry it, so the script reads `~/.kimi-code/config.toml` `[thinking]` instead (`effort`, falling back to the current model's `default_effort`; `off` when `enabled = false`)
+- **Removed**: the Ctx percentage segment (to keep the line short); the `Kimi` prefix on the quota segment
+
+New layout: `auto | K3-256k | high | 5h 15% (rst 03:44) · week 69% (rst 07/31 05:44) | ~/code/proj | main`
+
+### v1.0.0
+
+Initial release: TUI statusline (cache + background refresh) and the web-UI Tampermonkey badge.
 
 ## Scope
 

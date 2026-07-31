@@ -6,12 +6,12 @@
 
 > 本项目基于 [cc-planbar](https://github.com/baigong-ai/cc-planbar)（Claude Code 的额度状态栏组件）开发：provider 识别、额度接口逻辑、颜色阈值和缓存设计均参考自它；kimi-planbar 把这个思路移植到了 Kimi Code 自己的扩展点上。
 
-显示内容：**Context 使用百分比 + 套餐额度**（5 小时窗口 / 周限额，含重置时间），按用量变色：绿 <60%，黄 60–84%，红 ≥85%。
+显示内容：**权限模式（manual/auto/yolo）+ 模型 + thinking 级别 + 套餐额度**（5 小时窗口 / 周限额，含重置时间）。权限模式按危险程度变色（manual 绿 / auto 黄 / yolo 红）；额度按用量变色：绿 <60%，黄 60–84%，红 ≥85%。
 
 TUI 状态栏效果：
 
 ```
-k3-256k | Ctx 24.0% | Kimi 5h 15% (rst 03:44) · week 69% (rst 07/31 05:44) | ~/code/proj | main
+auto | K3-256k | high | 5h 15% (rst 03:44) · week 69% (rst 07/31 05:44) | ~/code/proj | main
 ```
 
 Web 界面效果：右上角悬浮徽章 —— `5h 15% (rst 03:44) · week 69% (rst 07/31 05:44)`，点击可手动刷新。
@@ -59,6 +59,8 @@ command = "~/.kimi-code/scripts/quota-status.py"
 
 ### 细节
 
+- 状态栏各段（从左到右）：权限模式（快照 `permissionMode`，会话内切换实时反映）→ 模型名 → thinking 级别 → 额度 → 当前目录 → git 分支（快照 `gitBranch`）
+- thinking 级别不在 stdin 快照里，脚本从 `~/.kimi-code/config.toml` 的 `[thinking]` 读取：`effort` → 当前模型的 `default_effort` 兜底；`enabled = false` 时显示 `off`。注意：它反映的是配置文件值，会话内未写回配置的临时切换不会体现
 - 缓存文件：`~/.kimi-code/scripts/quota-cache`，TTL 5 分钟；刷新失败后 30 秒重试
 - Kimi Code 传入的最近一次 stdin 快照保存在 `~/.kimi-code/scripts/last-stdin.json`，方便排查
 - 月度额度：Kimi 接口的 `totalQuota` 字段有值时自动显示 `month X%`
@@ -86,6 +88,25 @@ command = "~/.kimi-code/scripts/quota-status.py"
 - 脚本依赖 web UI 的两个内部实现：localStorage 键 `kimi-web.server-credential` 和接口 `/api/v1/oauth/usage`。Kimi Code 未来版本如果改动其中任何一个，徽章会显示 `quota ?`，届时更新脚本即可
 - 徽章位置：如果与其它 UI 重叠，改脚本里的 `top:8px; right:12px`
 - Kimi Code 默认只绑 127.0.0.1；脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`，不限端口
+
+## 更新日志
+
+### v1.1.0
+
+为什么改：v1.0.0 是按假设的 stdin 快照 schema 写的，装上真实环境后发现字段对不上——`model` 是纯字符串、git 分支叫 `gitBranch`、context 用量叫 `contextUsage`（0–1 小数），导致 Ctx 和分支段静默丢失。修 schema 的过程中，根据实际使用把状态栏重新设计为更实用的布局。
+
+改成什么样：
+
+- **修复**：按真实快照 schema 适配字段解析（`gitBranch`、模型字符串）
+- **新增**：权限模式段，固定在最前，取自快照 `permissionMode`——`manual` 绿 / `auto` 黄 / `yolo` 红，会话内切换模式实时反映
+- **新增**：thinking 级别段。快照里没有这个字段，脚本改为读 `~/.kimi-code/config.toml` 的 `[thinking]`（`effort`，缺省回落到当前模型的 `default_effort`；`enabled = false` 显示 `off`）
+- **移除**：Ctx 百分比段（控制栏总长）；额度段去掉 `Kimi` 前缀
+
+新布局示例：`auto | K3-256k | high | 5h 15% (rst 03:44) · week 69% (rst 07/31 05:44) | ~/code/proj | main`
+
+### v1.0.0
+
+首个版本：TUI 状态栏（缓存 + 后台刷新）+ web UI 油猴徽章。
 
 ## 适用范围
 
