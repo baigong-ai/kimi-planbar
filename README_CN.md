@@ -98,6 +98,10 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 
 ## 更新日志
 
+### v1.1.3
+
+- **油猴脚本**：修复 light 模式对比度——旧配色写死深色主题（半透明黑底 + 浅色文字），在浅色页面上徽章底色变成中灰、浅文字糊成一片（对比度仅约 1.9:1）。现在每次刷新时按 body 计算背景亮度判断主题，light/dark 各一套配色（light 模式下主要文字对比度 4.7–14:1），切换主题即时生效
+
 ### v1.1.2
 
 四个健壮性加固，同样来自 [@shawn-0106t](https://github.com/shawn-0106t) 在 issue #1 中的建议：

@@ -98,6 +98,10 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 
 ## Changelog
 
+### v1.1.3
+
+- **Userscript**: fixed light-mode contrast — the palette was hardcoded for dark pages (translucent black pill + light text), so on light pages the pill rendered mid-grey and the light text washed out (~1.9:1 contrast). The badge now picks a light/dark palette from the computed body background luminance on every refresh (4.7–14:1 for meaningful text in light mode), following theme toggles live
+
 ### v1.1.2
 
 Four robustness hardening items, again suggested by [@shawn-0106t](https://github.com/shawn-0106t) in issue #1:

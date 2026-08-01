@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kimi Code Web - Quota Badge
 // @namespace    local.kimi-code
-// @version      1.1
+// @version      1.2
 // @description  Show Kimi For Coding plan quota (5h / week) as a floating badge on the Kimi Code web UI
 // @match        http://127.0.0.1/*
 // @match        http://localhost/*
@@ -33,8 +33,34 @@
   // Note: refresh() re-reads the token from localStorage on every cycle so
   // credential rotation doesn't strand the badge until a page reload.
 
-  function color(pct) {
-    return pct >= 85 ? '#e5534b' : pct >= 60 ? '#d4a72c' : '#57ab5a';
+  // Two palettes: the badge must stay readable on both dark and light pages.
+  // The old single dark palette washed out on light pages (a 55%-black pill
+  // over a white page reads as mid-grey, killing the light text's contrast).
+  const DARK = {
+    badgeBg: 'rgba(0,0,0,.55)', badgeFg: '#ccc', border: '1px solid rgba(255,255,255,.08)',
+    red: '#e5534b', yellow: '#d4a72c', green: '#57ab5a', sep: '#666', err: '#888',
+  };
+  const LIGHT = {
+    badgeBg: 'rgba(255,255,255,.78)', badgeFg: '#24292f', border: '1px solid rgba(0,0,0,.12)',
+    red: '#cf222e', yellow: '#9a6700', green: '#1a7f37', sep: '#8c959f', err: '#57606a',
+  };
+
+  // Detect the page's own theme from the computed body background rather than
+  // trusting the OS preference; re-evaluated every refresh so toggles apply.
+  function theme() {
+    try {
+      const m = getComputedStyle(document.body).backgroundColor
+        .match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/);
+      if (m && (m[4] === undefined || parseFloat(m[4]) >= 0.5)) {
+        const lum = (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) / 255;
+        return lum > 0.6 ? LIGHT : DARK;
+      }
+    } catch { /* fall through to OS preference */ }
+    return matchMedia('(prefers-color-scheme: light)').matches ? LIGHT : DARK;
+  }
+
+  function color(pct, t) {
+    return pct >= 85 ? t.red : pct >= 60 ? t.yellow : t.green;
   }
 
   function fmtReset(iso) {
@@ -59,6 +85,10 @@
   document.documentElement.appendChild(badge);
 
   async function refresh() {
+    const t = theme();
+    badge.style.background = t.badgeBg;
+    badge.style.color = t.badgeFg;
+    badge.style.border = t.border;
     try {
       const tok = getToken(); // re-read every cycle: survives credential rotation
       if (!tok) throw new Error('no token');
@@ -75,13 +105,13 @@
       const add = (txt, p) => {
         if (count > 0) {
           const sep = document.createElement('span');
-          sep.style.color = '#666';
+          sep.style.color = t.sep;
           sep.textContent = ' · ';
           frag.appendChild(sep);
         }
         count += 1;
         const s = document.createElement('span');
-        s.style.color = color(p);
+        s.style.color = color(p, t);
         s.textContent = txt;
         frag.appendChild(s);
       };
@@ -101,7 +131,7 @@
       else badge.textContent = 'quota n/a';
     } catch {
       badge.textContent = 'quota ?';
-      badge.style.color = '#888';
+      badge.style.color = t.err;
     }
   }
 
