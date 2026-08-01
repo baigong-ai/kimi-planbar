@@ -75,8 +75,13 @@ def fetch_quota():
         d = json.load(r)
     parts = []
     lims = d.get('limits') or []
-    if lims:
-        det = lims[0].get('detail') or {}
+    five = next(
+        (l for l in lims
+         if (l.get('window') or {}).get('duration') == 300
+         and (l.get('window') or {}).get('timeUnit') == 'TIME_UNIT_MINUTE'),
+        lims[0] if lims else None)  # fall back to the first window
+    if five:
+        det = five.get('detail') or {}
         lim = float(det.get('limit', 0)) or 1
         parts.append(seg('5h', float(det.get('used', 0)) / lim * 100,
                          parse_iso(det.get('resetTime'))))
@@ -174,11 +179,14 @@ def main():
     except Exception:
         d = {}
     # Keep the last snapshot around so the schema is easy to inspect/debug.
-    try:
-        with open(os.path.join(DIR, 'last-stdin.json'), 'w') as f:
-            json.dump(d, f)
-    except Exception:
-        pass
+    # Off by default (the statusline renders once per second); opt in with
+    # QUOTA_DEBUG=1.
+    if os.environ.get('QUOTA_DEBUG') == '1':
+        try:
+            with open(os.path.join(DIR, 'last-stdin.json'), 'w') as f:
+                json.dump(d, f)
+        except Exception:
+            pass
 
     parts = []
 

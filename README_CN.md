@@ -69,7 +69,7 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 - 状态栏各段（从左到右）：权限模式（快照 `permissionMode`，会话内切换实时反映）→ 模型名 → thinking 级别 → 额度 → 当前目录 → git 分支（快照 `gitBranch`）
 - thinking 级别不在 stdin 快照里，脚本从 `~/.kimi-code/config.toml` 的 `[thinking]` 读取：`effort` → 当前模型的 `default_effort` 兜底；`enabled = false` 时显示 `off`。注意：它反映的是配置文件值，会话内未写回配置的临时切换不会体现
 - 缓存文件：`~/.kimi-code/scripts/quota-cache`，TTL 5 分钟；刷新失败后 30 秒重试
-- Kimi Code 传入的最近一次 stdin 快照保存在 `~/.kimi-code/scripts/last-stdin.json`，方便排查
+- 排查快照 schema 时：设 `QUOTA_DEBUG=1` 后脚本会把最近一次 stdin 快照写到 `~/.kimi-code/scripts/last-stdin.json`（默认关闭，避免每秒一次磁盘写入）
 - 月度额度：Kimi 接口的 `totalQuota` 字段有值时自动显示 `month X%`
 - 颜色阈值想改：编辑 `quota-status.py` 里的 `col()` 函数
 
@@ -97,6 +97,15 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 - Kimi Code 默认只绑 127.0.0.1；脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`，不限端口
 
 ## 更新日志
+
+### v1.1.2
+
+四个健壮性加固，同样来自 [@shawn-0106t](https://github.com/shawn-0106t) 在 issue #1 中的建议：
+
+- **TUI 脚本**：5 小时窗口不再写死取 `limits[0]`，改为按 `window.duration=300 + timeUnit=TIME_UNIT_MINUTE` 匹配（找不到才回落到第一个窗口），接口顺序调整或新增窗口时不会拿错数据
+- **TUI 脚本**：`last-stdin.json` 调试快照默认不再写盘（状态栏每秒渲染一次，之前等于每秒一次磁盘 I/O）；需要排查时设 `QUOTA_DEBUG=1` 开启
+- **油猴脚本**：接口数据改用 DOM 节点 + `textContent` 渲染，不再拼 `innerHTML`，从机制上杜绝注入
+- **油猴脚本**：每轮刷新前重新读 `localStorage` 的 token，凭证轮换后不用手动刷新页面
 
 ### v1.1.1
 

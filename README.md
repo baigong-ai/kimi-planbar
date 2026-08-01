@@ -69,7 +69,7 @@ and calls `GET https://api.kimi.com/coding/v1/usages` with it.
 - Segments, left to right: permission mode (snapshot `permissionMode`, reflects in-session switches live) → model → thinking effort → quota → cwd → git branch (snapshot `gitBranch`)
 - The thinking effort is not in the stdin snapshot; the script reads it from `~/.kimi-code/config.toml` `[thinking]`: `effort`, falling back to the current model's `default_effort`; shows `off` when `enabled = false`. Note this reflects the config file — transient in-session changes that aren't written back won't show
 - Cache: `~/.kimi-code/scripts/quota-cache`, TTL 5 minutes; failed refreshes retry after 30s
-- The last stdin snapshot Kimi Code passed in is kept at `~/.kimi-code/scripts/last-stdin.json` for debugging
+- To debug the snapshot schema: set `QUOTA_DEBUG=1` and the script writes the last stdin snapshot to `~/.kimi-code/scripts/last-stdin.json` (off by default, to avoid a disk write per second)
 - Monthly quota: shown automatically as `month X%` when the `totalQuota` field is populated
 - To change color thresholds: edit the `col()` function in `quota-status.py`
 
@@ -97,6 +97,15 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 - Kimi Code binds to 127.0.0.1 by default; the userscript matches `http://127.0.0.1/*` and `http://localhost/*`, any port
 
 ## Changelog
+
+### v1.1.2
+
+Four robustness hardening items, again suggested by [@shawn-0106t](https://github.com/shawn-0106t) in issue #1:
+
+- **TUI script**: the 5-hour window is no longer assumed to be `limits[0]` — it's matched by `window.duration=300 + timeUnit=TIME_UNIT_MINUTE` (falling back to the first window only when no match), so reordering or additional windows won't show wrong data
+- **TUI script**: the `last-stdin.json` debug snapshot is no longer written on every render (the statusline renders once per second — that was a disk write per second); opt in with `QUOTA_DEBUG=1` when debugging
+- **Userscript**: API data now renders via DOM nodes + `textContent` instead of `innerHTML` string building — injection-proof by construction
+- **Userscript**: the bearer token is re-read from `localStorage` before every refresh, so credential rotation no longer requires a page reload
 
 ### v1.1.1
 

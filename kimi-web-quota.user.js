@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kimi Code Web - Quota Badge
 // @namespace    local.kimi-code
-// @version      1.0
+// @version      1.1
 // @description  Show Kimi For Coding plan quota (5h / week) as a floating badge on the Kimi Code web UI
 // @match        http://127.0.0.1/*
 // @match        http://localhost/*
@@ -30,6 +30,8 @@
 
   const token = getToken();
   if (!token) return; // not a Kimi Code web UI page — stay out of the way
+  // Note: refresh() re-reads the token from localStorage on every cycle so
+  // credential rotation doesn't strand the badge until a page reload.
 
   function color(pct) {
     return pct >= 85 ? '#e5534b' : pct >= 60 ? '#d4a72c' : '#57ab5a';
@@ -58,27 +60,45 @@
 
   async function refresh() {
     try {
+      const tok = getToken(); // re-read every cycle: survives credential rotation
+      if (!tok) throw new Error('no token');
       const r = await fetch('/api/v1/oauth/usage', {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        headers: { Authorization: `Bearer ${tok}`, Accept: 'application/json' },
       });
       if (!r.ok) throw new Error(String(r.status));
       const { data } = await r.json();
       if (!data || data.kind !== 'ok') throw new Error('no data');
 
-      const parts = [];
+      // Build DOM nodes instead of innerHTML: API values stay text, never markup.
+      const frag = document.createDocumentFragment();
+      let count = 0;
+      const add = (txt, p) => {
+        if (count > 0) {
+          const sep = document.createElement('span');
+          sep.style.color = '#666';
+          sep.textContent = ' · ';
+          frag.appendChild(sep);
+        }
+        count += 1;
+        const s = document.createElement('span');
+        s.style.color = color(p);
+        s.textContent = txt;
+        frag.appendChild(s);
+      };
       const five = (data.limits || []).find(
         (l) => l.window && l.window.unit === 'hour' && l.window.duration === 5
       ) || (data.limits || [])[0];
       if (five && five.limit) {
         const p = (five.used / five.limit) * 100;
-        parts.push(`<span style="color:${color(p)}">5h ${p.toFixed(0)}% (rst ${fmtReset(five.reset_at)})</span>`);
+        add(`5h ${p.toFixed(0)}% (rst ${fmtReset(five.reset_at)})`, p);
       }
       const w = data.summary;
       if (w && w.limit) {
         const p = (w.used / w.limit) * 100;
-        parts.push(`<span style="color:${color(p)}">week ${p.toFixed(0)}% (rst ${fmtReset(w.reset_at)})</span>`);
+        add(`week ${p.toFixed(0)}% (rst ${fmtReset(w.reset_at)})`, p);
       }
-      badge.innerHTML = parts.length ? parts.join('<span style="color:#666"> · </span>') : 'quota n/a';
+      if (count > 0) badge.replaceChildren(frag);
+      else badge.textContent = 'quota n/a';
     } catch {
       badge.textContent = 'quota ?';
       badge.style.color = '#888';
