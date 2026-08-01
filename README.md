@@ -146,6 +146,7 @@ Initial release: TUI statusline (cache + background refresh) and the web-UI Tamp
 
 - [cc-planbar](https://github.com/baigong-ai/cc-planbar) — the project this is based on: quota endpoints, provider logic, color scheme, and caching design
 - [Kimi Code](https://www.kimi.com/code/) — `[status_line].command` extension point and the local server's `/api/v1/oauth/usage` endpoint
+- [@shawn-0106t](https://github.com/shawn-0106t) — tested Windows report and fixes (v1.1.1) and four robustness suggestions (v1.1.2)
 
 ## License
 

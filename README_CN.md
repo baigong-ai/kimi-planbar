@@ -146,6 +146,7 @@ Windows 修复，来自 [@shawn-0106t](https://github.com/shawn-0106t) 的实测
 
 - [cc-planbar](https://github.com/baigong-ai/cc-planbar) — 本项目的基础：额度接口、provider 逻辑、颜色方案和缓存设计均来自它
 - [Kimi Code](https://www.kimi.com/code/) — 提供 `[status_line].command` 扩展点和本地服务的 `/api/v1/oauth/usage` 接口
+- [@shawn-0106t](https://github.com/shawn-0106t) — Windows 修复（v1.1.1）与四项健壮性加固（v1.1.2）的实测报告与建议
 
 ## License
 
