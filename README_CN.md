@@ -96,6 +96,24 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 - 徽章位置：如果与其它 UI 重叠，改脚本里的 `top:8px; right:12px`
 - Kimi Code 默认只绑 127.0.0.1；脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`，不限端口
 
+## 已知问题（上游）：Kimi Code 会重写 `tui.toml`
+
+这不是 kimi-planbar 能修的问题，但会直接影响状态栏，写在这里提醒大家（来自 [@shawn-0106t](https://github.com/shawn-0106t) 在 issue #1 中的反馈，Kimi Code 0.31.1 实测 100% 复现）：
+
+**症状**：在 TUI 里用 `/theme` 切换主题，或 Kimi Code 版本升级后首次启动，Kimi Code 会把 `tui.toml` 整体重写为默认模板，`[status_line]` 配置被静默丢掉。坑在当前窗口靠内存中的配置照常显示，要等下次 `/reload-tui` 或重启才暴露，很难归因。
+
+**建议**：
+
+1. 改主题不要用 `/theme`——手动编辑 `tui.toml` 里的 `theme = "..."`，再 `/reload-tui`
+2. 每次升级 Kimi Code 后，检查 `tui.toml` 里 `[status_line]` 还在不在
+3. 丢了就用一条命令补回，然后 `/reload-tui`：
+
+```bash
+printf '\n[status_line]\ncommand = "~/.kimi-code/scripts/quota-status.py"\n' >> ~/.kimi-code/tui.toml
+```
+
+Windows 用户把 command 换成上面 Windows 版的写法。油猴徽章不受影响——它不读 `tui.toml`。
+
 ## 更新日志
 
 ### v1.1.3

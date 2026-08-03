@@ -96,6 +96,24 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 - Badge position: edit `top:8px; right:12px` in the script if it overlaps other UI
 - Kimi Code binds to 127.0.0.1 by default; the userscript matches `http://127.0.0.1/*` and `http://localhost/*`, any port
 
+## Known upstream issue: Kimi Code rewrites `tui.toml`
+
+Not something kimi-planbar can fix, but it directly affects the statusline — flagged here for awareness (reported by [@shawn-0106t](https://github.com/shawn-0106t) in issue #1, 100% reproducible on Kimi Code 0.31.1):
+
+**Symptom**: switching themes via `/theme`, or the first launch after a Kimi Code upgrade, rewrites `tui.toml` to the default template, silently dropping the `[status_line]` config. The tricky part: the current window keeps rendering from the in-memory config, so the loss only surfaces on the next `/reload-tui` or restart — hard to attribute.
+
+**What to do**:
+
+1. Don't use `/theme` to change themes — edit `theme = "..."` in `tui.toml` manually, then `/reload-tui`
+2. After every Kimi Code upgrade, check that `[status_line]` is still in `tui.toml`
+3. If it's gone, restore it with one command, then `/reload-tui`:
+
+```bash
+printf '\n[status_line]\ncommand = "~/.kimi-code/scripts/quota-status.py"\n' >> ~/.kimi-code/tui.toml
+```
+
+On Windows, use the Windows command form from the install section instead. The userscript badge is unaffected — it doesn't read `tui.toml`.
+
 ## Changelog
 
 ### v1.1.3
