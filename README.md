@@ -124,6 +124,7 @@ On Windows, use the Windows command form from the install section instead. The u
 
 - **Userscript**: adapted to Kimi Code v0.32 — v0.32 enforces bearer auth on every REST route (including `/api/v1/oauth/usage`), accepting only the server token printed at startup as a `#token=` URL; credentials stored by v0.31 are rejected with 401 and the badge showed `quota ?`. Fix: credentials are now read from both localStorage and sessionStorage, `expiresAt` is respected (expired = absent), and a 401/403 retries with the credential from the other store
 - **If the badge shows `quota ?` after upgrading to v0.32**: re-open the web UI once via `/web` (or log in again on the auth page) — the frontend stores the new server credential in browser storage and the badge recovers
+- **How this was found**: the badge broke after the v0.32 upgrade. The investigation — spinning up a v0.32 web server, probing the API, and reading the frontend bundle's credential logic — pinned it down to the server moving from no auth to mandatory bearer auth on every route. That same "read the web UI's internals" approach powers the sister project [kimi-web-file-explorer](https://github.com/baigong-ai/kimi-web-file-explorer), which goes much further: it patches the official web UI source and rebuilds it with a full Files sidebar and in-page file preview. If the badge is useful to you, that one is worth a look
 
 ### v1.1.3
 

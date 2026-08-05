@@ -124,6 +124,7 @@ Windows 用户把 command 换成上面 Windows 版的写法。油猴徽章不受
 
 - **油猴脚本**：适配 Kimi Code v0.32——v0.32 给 web 服务的所有 REST 路由（含 `/api/v1/oauth/usage`）加了强制 bearer 鉴权，只认服务端启动时打印的 `#token=` 服务器令牌；v0.31 时代存下的旧凭证会被 401 拒绝，徽章显示 `quota ?`。修复：凭证读取扩展为 localStorage + sessionStorage 双来源、尊重 `expiresAt`（过期视为不存在）、401/403 时自动换另一来源的凭证重试
 - **升级到 v0.32 后如果徽章显示 `quota ?`**：从 TUI 重新 `/web` 打开一次（或在登录页重新登录）——前端会把新的服务器凭证写进浏览器存储，徽章随即恢复
+- **怎么发现的**：v0.32 升级后徽章失效，排查时起了 v0.32 的 web 服务实测接口、对照前端 bundle 的凭证读写逻辑，确认服务端从"无鉴权"变成"全路由强制 bearer"、旧凭证被 401 拒绝。这套翻 web 端内部实现的排查方法，正是姊妹项目 [kimi-web-file-explorer](https://github.com/baigong-ai/kimi-web-file-explorer) 的工作方式——那个项目走得更远：直接给官方 web UI 源码打 patch 重新构建，在聊天页里加了完整的文件树侧栏和文件预览。徽章用着顺手的话，那个项目值得一看
 
 ### v1.1.3
 
