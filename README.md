@@ -116,6 +116,11 @@ On Windows, use the Windows command form from the install section instead. The u
 
 ## Changelog
 
+### v1.1.4
+
+- **Userscript**: adapted to Kimi Code v0.32 — v0.32 enforces bearer auth on every REST route (including `/api/v1/oauth/usage`), accepting only the server token printed at startup as a `#token=` URL; credentials stored by v0.31 are rejected with 401 and the badge showed `quota ?`. Fix: credentials are now read from both localStorage and sessionStorage, `expiresAt` is respected (expired = absent), and a 401/403 retries with the credential from the other store
+- **If the badge shows `quota ?` after upgrading to v0.32**: re-open the web UI once via `/web` (or log in again on the auth page) — the frontend stores the new server credential in browser storage and the badge recovers
+
 ### v1.1.3
 
 - **Userscript**: fixed light-mode contrast — the palette was hardcoded for dark pages (translucent black pill + light text), so on light pages the pill rendered mid-grey and the light text washed out (~1.9:1 contrast). The badge now picks a light/dark palette from the computed body background luminance on every refresh (4.7–14:1 for meaningful text in light mode), following theme toggles live

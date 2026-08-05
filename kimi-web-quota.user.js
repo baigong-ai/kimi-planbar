@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kimi Code Web - Quota Badge
 // @namespace    local.kimi-code
-// @version      1.2
+// @version      1.3
 // @description  Show Kimi For Coding plan quota (5h / week) as a floating badge on the Kimi Code web UI
 // @match        http://127.0.0.1/*
 // @match        http://localhost/*
@@ -15,17 +15,47 @@
   const CRED_KEY = 'kimi-web.server-credential';
   const REFRESH_MS = 60_000;
 
-  function getToken() {
+  // v0.32 note: the server now requires its own bearer token (printed at
+  // startup as a #token= URL) on every REST route — the old OAuth credential
+  // is rejected with 401. After the web UI logs in, the new credential lands
+  // in this same localStorage key, so reading it here still works.
+  function readCred(store) {
     try {
-      const raw = localStorage.getItem(CRED_KEY);
+      const raw = store.getItem(CRED_KEY);
       if (!raw) return null;
-      const obj = JSON.parse(raw);
-      // {version:1, credential:"...", expiresAt:...}; tolerate a raw token too
-      if (obj && typeof obj.credential === 'string') return obj.credential;
-      return typeof raw === 'string' && raw.length > 10 ? raw : null;
+      try {
+        const obj = JSON.parse(raw);
+        // {version:1, credential:"...", expiresAt:<ms epoch>}
+        if (obj && typeof obj.credential === 'string') {
+          // Respect expiresAt: the web UI treats an expired credential as
+          // absent; sending it anyway just earns a 401.
+          if (typeof obj.expiresAt === 'number' && obj.expiresAt <= Date.now()) return null;
+          return obj.credential;
+        }
+      } catch { /* not JSON — legacy raw token */ }
+      return raw.length > 10 ? raw : null;
     } catch {
       return null;
     }
+  }
+
+  function getToken() {
+    return readCred(localStorage) || readCred(sessionStorage);
+  }
+
+  // The other credential, if any, after `seen` was rejected with 401/403.
+  function altToken(seen) {
+    for (const store of [localStorage, sessionStorage]) {
+      const t = readCred(store);
+      if (t && t !== seen) return t;
+    }
+    return null;
+  }
+
+  async function fetchUsage(tok) {
+    return fetch('/api/v1/oauth/usage', {
+      headers: { Authorization: `Bearer ${tok}`, Accept: 'application/json' },
+    });
   }
 
   const token = getToken();
@@ -90,12 +120,20 @@
     badge.style.color = t.badgeFg;
     badge.style.border = t.border;
     try {
-      const tok = getToken(); // re-read every cycle: survives credential rotation
+      let tok = getToken(); // re-read every cycle: survives credential rotation
       if (!tok) throw new Error('no token');
-      const r = await fetch('/api/v1/oauth/usage', {
-        headers: { Authorization: `Bearer ${tok}`, Accept: 'application/json' },
-      });
+      let r = await fetchUsage(tok);
+      // v0.32: a stale credential (e.g. the pre-0.32 OAuth token) earns a 401.
+      // Try the credential from the other storage before giving up.
+      if (r.status === 401 || r.status === 403) {
+        const alt = altToken(tok);
+        if (alt) {
+          tok = alt;
+          r = await fetchUsage(tok);
+        }
+      }
       if (!r.ok) throw new Error(String(r.status));
+      badge.title = 'Kimi For Coding quota (click to refresh)';
       const { data } = await r.json();
       if (!data || data.kind !== 'ok') throw new Error('no data');
 
@@ -132,6 +170,9 @@
     } catch {
       badge.textContent = 'quota ?';
       badge.style.color = t.err;
+      // Actionable hint: after a Kimi Code upgrade the stored credential may
+      // be stale; re-opening the web UI from the CLI's #token= URL fixes it.
+      badge.title = 'quota fetch failed — if you just upgraded Kimi Code, re-open the web UI from the #token= URL the CLI printed, then click here';
     }
   }
 
