@@ -5,6 +5,8 @@
 Plan-quota display for [Kimi Code](https://www.kimi.com/code/) CLI: a **TUI statusline** plus a **web-UI quota badge**, so Kimi For Coding users can always see how much of their plan is left.
 
 > This project is based on [cc-planbar](https://github.com/baigong-ai/cc-planbar) (a quota statusline for Claude Code). The provider detection, quota-endpoint logic, color thresholds, and caching design are adapted from it; kimi-planbar ports the idea to Kimi Code's own extension points.
+>
+> Sister project: **[kimi-web-file-explorer](https://github.com/baigong-ai/kimi-web-file-explorer)** — a Files sidebar and in-page file preview for the Kimi Code web UI: browse the workspace right inside the chat page, no more switching to a terminal or Finder.
 
 Shows: **permission mode (manual/auto/yolo) + model + thinking effort + plan quota** (5-hour window / weekly limit, with reset times). The mode is color-coded by risk (manual green / auto yellow / yolo red); quota is color-coded by usage: green <60%, yellow 60–84%, red ≥85%.
 

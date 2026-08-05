@@ -5,6 +5,8 @@
 [Kimi Code](https://www.kimi.com/code/) CLI 的套餐额度显示组件：包含 **TUI 状态栏脚本**和 **web 界面额度徽章**两部分，让 Kimi For Coding 用户随时看到套餐还剩多少。
 
 > 本项目基于 [cc-planbar](https://github.com/baigong-ai/cc-planbar)（Claude Code 的额度状态栏组件）开发：provider 识别、额度接口逻辑、颜色阈值和缓存设计均参考自它；kimi-planbar 把这个思路移植到了 Kimi Code 自己的扩展点上。
+>
+> 姊妹项目：**[kimi-web-file-explorer](https://github.com/baigong-ai/kimi-web-file-explorer)** —— 给 Kimi Code web 界面加上文件树侧栏和文件预览，聊天页里直接浏览工作目录，不用再切到终端或 Finder。
 
 显示内容：**权限模式（manual/auto/yolo）+ 模型 + thinking 级别 + 套餐额度**（5 小时窗口 / 周限额，含重置时间）。权限模式按危险程度变色（manual 绿 / auto 黄 / yolo 红）；额度按用量变色：绿 <60%，黄 60–84%，红 ≥85%。
 
