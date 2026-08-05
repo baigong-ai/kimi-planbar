@@ -93,7 +93,7 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 ### 注意事项
 
 - 脚本依赖 web UI 的两个内部实现：localStorage 键 `kimi-web.server-credential` 和接口 `/api/v1/oauth/usage`。Kimi Code 未来版本如果改动其中任何一个，徽章会显示 `quota ?`，届时更新脚本即可
-- 徽章位置：如果与其它 UI 重叠，改脚本里的 `top:8px; right:12px`
+- 徽章位置：徽章会自动锚定在聊天头部右侧按钮群（git/PR 按钮，或界面补丁加的 Files 按钮）的左边，按钮出现/消失时实时重算；在没有聊天头部的页面上回落到右上角。想强制改位置就编辑脚本里的 `placeBadge()`
 - Kimi Code 默认只绑 127.0.0.1；脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`，不限端口
 
 ## 已知问题（上游）：Kimi Code 会重写 `tui.toml`
@@ -115,6 +115,10 @@ printf '\n[status_line]\ncommand = "~/.kimi-code/scripts/quota-status.py"\n' >> 
 Windows 用户把 command 换成上面 Windows 版的写法。油猴徽章不受影响——它不读 `tui.toml`。
 
 ## 更新日志
+
+### v1.1.5
+
+- **油猴脚本**：徽章不再遮挡聊天头部自身的按钮。之前徽章写死 `top:8px; right:12px` 且 z-index 99999——正好是头部右侧按钮群的渲染位置（官方界面的 git/PR 按钮；kimi-web-files 等补丁界面的 Files 按钮），徽章直接盖在上面导致点不到。现在徽章会测量头部右侧按钮群的左边缘，自动锚定到按钮群左边（MutationObserver + resize 监听，rAF 节流，按钮出现/消失实时重算），并在头部内垂直居中。没有聊天头部的页面保持原来的右上角默认位
 
 ### v1.1.4
 

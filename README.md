@@ -93,7 +93,7 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 ### Caveats
 
 - The script relies on two web-UI internals: the `kimi-web.server-credential` localStorage key and the `/api/v1/oauth/usage` endpoint. If a future Kimi Code version changes either, the badge shows `quota ?` — updating the script should fix it
-- Badge position: edit `top:8px; right:12px` in the script if it overlaps other UI
+- Badge position: the badge auto-anchors just left of the chat header's right-side button cluster (git/PR pills, or the Files button added by UI patches), recomputed live as those buttons appear/disappear; on pages without a chat header it falls back to the top-right corner. To force a different spot, edit `placeBadge()` in the script
 - Kimi Code binds to 127.0.0.1 by default; the userscript matches `http://127.0.0.1/*` and `http://localhost/*`, any port
 
 ## Known upstream issue: Kimi Code rewrites `tui.toml`
@@ -115,6 +115,10 @@ printf '\n[status_line]\ncommand = "~/.kimi-code/scripts/quota-status.py"\n' >> 
 On Windows, use the Windows command form from the install section instead. The userscript badge is unaffected — it doesn't read `tui.toml`.
 
 ## Changelog
+
+### v1.1.5
+
+- **Userscript**: the badge no longer covers the chat header's own buttons. It used to sit at a hardcoded `top:8px; right:12px` with z-index 99999 — exactly where the header's right-side cluster renders (git/PR pills on the stock UI; the Files panel button on patched UIs such as kimi-web-files), painting over those buttons and making them unclickable. The badge now measures the header's right-side cluster and anchors itself just left of it, recomputed live (MutationObserver + resize, rAF-throttled) as buttons appear/disappear, and vertically centered within the header. Pages without a chat header keep the original top-right corner fallback
 
 ### v1.1.4
 

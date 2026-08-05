@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kimi Code Web - Quota Badge
 // @namespace    local.kimi-code
-// @version      1.3
+// @version      1.4
 // @description  Show Kimi For Coding plan quota (5h / week) as a floating badge on the Kimi Code web UI
 // @match        http://127.0.0.1/*
 // @match        http://localhost/*
@@ -113,6 +113,39 @@
   ].join(';');
   badge.textContent = 'quota …';
   document.documentElement.appendChild(badge);
+
+  // --- Placement: stay clear of the chat header's own buttons -------------
+  // The badge is a fixed overlay; the header's right-side button cluster
+  // (Files panel button on patched UIs, git/PR pills on stock) sits exactly
+  // where a naive `right:12px` badge lands, and the badge covered it. Anchor
+  // the badge just LEFT of that cluster instead, recomputed as the UI changes.
+  // `top`/`right` in the cssText above are the fallback when no header exists.
+  const DEFAULT_RIGHT = 12;
+  function placeBadge() {
+    const header = document.querySelector('header.chat-header');
+    const spacer = header && header.querySelector('.ch-spacer');
+    const firstBtn = spacer && spacer.nextElementSibling;
+    if (firstBtn) {
+      badge.style.right = `${Math.max(DEFAULT_RIGHT, innerWidth - firstBtn.getBoundingClientRect().left + 8)}px`;
+      const hr = header.getBoundingClientRect();
+      badge.style.top = `${hr.top + (hr.height - badge.offsetHeight) / 2}px`;
+    } else {
+      badge.style.right = `${DEFAULT_RIGHT}px`;
+      badge.style.top = '8px';
+    }
+  }
+  // Header buttons mount/unmount reactively (git/PR pills, Files button) and
+  // the header itself is swapped on SPA navigation, so watch the whole tree;
+  // the rAF guard keeps this to one rect read per frame even while streaming.
+  let placeScheduled = false;
+  function schedulePlace() {
+    if (placeScheduled) return;
+    placeScheduled = true;
+    requestAnimationFrame(() => { placeScheduled = false; placeBadge(); });
+  }
+  new MutationObserver(schedulePlace).observe(document.body, { childList: true, subtree: true });
+  addEventListener('resize', schedulePlace);
+  placeBadge();
 
   async function refresh() {
     const t = theme();
