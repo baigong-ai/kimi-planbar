@@ -118,6 +118,10 @@ Windows 用户把 command 换成上面 Windows 版的写法。油猴徽章不受
 
 ## 更新日志
 
+### v1.1.6
+
+- **油猴脚本**：修复徽章在 web 标签页长期打开后失效——v1.1.4 引入的回归。前端的 `expiresAt`（登录后 7 天）是纯客户端逻辑，服务端从不检查；v1.1.4 把过期凭证直接丢弃，导致标签页开过 7 天后徽章显示 `quota ?`，而此时 UI 靠内存中的 token 仍在正常工作。修复：过期凭证改为排序兜底（新鲜的优先，过期的照样尝试），401/403 时依次遍历 localStorage + sessionStorage 里存的所有凭证。已验证兼容 Kimi Code v0.35.0
+
 ### v1.1.5
 
 - **油猴脚本**：徽章不再遮挡聊天头部自身的按钮。之前徽章写死 `top:8px; right:12px` 且 z-index 99999——正好是头部右侧按钮群的渲染位置（官方界面的 git/PR 按钮；kimi-web-files 等补丁界面的 Files 按钮），徽章直接盖在上面导致点不到。现在徽章会测量头部右侧按钮群的左边缘，自动锚定到按钮群左边（MutationObserver + resize 监听，rAF 节流，按钮出现/消失实时重算），并在头部内垂直居中。没有聊天头部的页面保持原来的右上角默认位
@@ -170,6 +174,7 @@ Windows 修复，来自 [@shawn-0106t](https://github.com/shawn-0106t) 的实测
 ## 适用范围
 
 - 仅支持 Kimi For Coding 套餐（`api.kimi.com/coding`）。Claude Code + Kimi/智谱 GLM 的场景请用 [cc-planbar](https://github.com/baigong-ai/cc-planbar)
+- 已验证兼容 Kimi Code 0.31–0.35（TUI 状态栏 + web 徽章）
 - 状态栏脚本需要 Python 3（纯标准库；推荐 3.11+，ISO 时间解析最宽容）
 
 ## 致谢

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kimi Code Web - Quota Badge
 // @namespace    local.kimi-code
-// @version      1.4
+// @version      1.5
 // @description  Show Kimi For Coding plan quota (5h / week) as a floating badge on the Kimi Code web UI
 // @match        http://127.0.0.1/*
 // @match        http://localhost/*
@@ -15,10 +15,10 @@
   const CRED_KEY = 'kimi-web.server-credential';
   const REFRESH_MS = 60_000;
 
-  // v0.32 note: the server now requires its own bearer token (printed at
-  // startup as a #token= URL) on every REST route — the old OAuth credential
-  // is rejected with 401. After the web UI logs in, the new credential lands
-  // in this same localStorage key, so reading it here still works.
+  // v0.32 note: the server requires its own bearer token (printed at startup
+  // as a #token= URL) on every REST route — the old OAuth credential is
+  // rejected with 401. After the web UI logs in, the new credential lands in
+  // this same localStorage key, so reading it here still works.
   function readCred(store) {
     try {
       const raw = store.getItem(CRED_KEY);
@@ -27,29 +27,32 @@
         const obj = JSON.parse(raw);
         // {version:1, credential:"...", expiresAt:<ms epoch>}
         if (obj && typeof obj.credential === 'string') {
-          // Respect expiresAt: the web UI treats an expired credential as
-          // absent; sending it anyway just earns a 401.
-          if (typeof obj.expiresAt === 'number' && obj.expiresAt <= Date.now()) return null;
-          return obj.credential;
+          return {
+            token: obj.credential,
+            expired: typeof obj.expiresAt === 'number' && obj.expiresAt <= Date.now(),
+          };
         }
       } catch { /* not JSON — legacy raw token */ }
-      return raw.length > 10 ? raw : null;
+      return raw.length > 10 ? { token: raw, expired: false } : null;
     } catch {
       return null;
     }
   }
 
-  function getToken() {
-    return readCred(localStorage) || readCred(sessionStorage);
-  }
-
-  // The other credential, if any, after `seen` was rejected with 401/403.
-  function altToken(seen) {
+  // All stored credentials, fresh ones first. expiresAt is enforced only by
+  // the web UI (to trigger its re-login flow); the server itself keeps
+  // accepting the token, so an "expired" record is still a valid credential
+  // for us — discarding it would kill the badge in any tab left open past
+  // the 7-day client-side TTL while the UI itself keeps running on its
+  // in-memory token.
+  function credCandidates() {
+    const out = [];
     for (const store of [localStorage, sessionStorage]) {
-      const t = readCred(store);
-      if (t && t !== seen) return t;
+      const c = readCred(store);
+      if (c) out.push(c);
     }
-    return null;
+    out.sort((a, b) => a.expired - b.expired);
+    return out.map((c) => c.token);
   }
 
   async function fetchUsage(tok) {
@@ -58,10 +61,18 @@
     });
   }
 
-  const token = getToken();
-  if (!token) return; // not a Kimi Code web UI page — stay out of the way
-  // Note: refresh() re-reads the token from localStorage on every cycle so
-  // credential rotation doesn't strand the badge until a page reload.
+  // Try each stored credential until one isn't rejected.
+  async function fetchUsageAny() {
+    const cands = credCandidates();
+    let r = null;
+    for (const tok of cands) {
+      r = await fetchUsage(tok);
+      if (r.status !== 401 && r.status !== 403) break;
+    }
+    return r;
+  }
+
+  if (credCandidates().length === 0) return; // not a Kimi Code web UI page — stay out of the way
 
   // Two palettes: the badge must stay readable on both dark and light pages.
   // The old single dark palette washed out on light pages (a 55%-black pill
@@ -153,18 +164,12 @@
     badge.style.color = t.badgeFg;
     badge.style.border = t.border;
     try {
-      let tok = getToken(); // re-read every cycle: survives credential rotation
-      if (!tok) throw new Error('no token');
-      let r = await fetchUsage(tok);
-      // v0.32: a stale credential (e.g. the pre-0.32 OAuth token) earns a 401.
-      // Try the credential from the other storage before giving up.
-      if (r.status === 401 || r.status === 403) {
-        const alt = altToken(tok);
-        if (alt) {
-          tok = alt;
-          r = await fetchUsage(tok);
-        }
-      }
+      // Credentials are re-read every cycle: rotation doesn't strand the
+      // badge until a page reload, and a rejected one falls through to the
+      // next stored credential (e.g. a stale pre-0.32 OAuth token 401s, then
+      // the fresh server credential is tried).
+      const r = await fetchUsageAny();
+      if (!r) throw new Error('no token');
       if (!r.ok) throw new Error(String(r.status));
       badge.title = 'Kimi For Coding quota (click to refresh)';
       const { data } = await r.json();

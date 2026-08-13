@@ -118,6 +118,10 @@ On Windows, use the Windows command form from the install section instead. The u
 
 ## Changelog
 
+### v1.1.6
+
+- **Userscript**: fixed the badge dying in long-lived web tabs — a regression from v1.1.4. The frontend's `expiresAt` (7 days after login) is client-side only; the server never checks it. v1.1.4 discarded expired credentials, so 7 days after login the badge showed `quota ?` while the UI kept running on its in-memory token. Fix: expired credentials are now a fallback (fresh first, expired still tried), and a 401/403 walks through every credential stored in localStorage + sessionStorage. Verified on Kimi Code v0.35.0
+
 ### v1.1.5
 
 - **Userscript**: the badge no longer covers the chat header's own buttons. It used to sit at a hardcoded `top:8px; right:12px` with z-index 99999 — exactly where the header's right-side cluster renders (git/PR pills on the stock UI; the Files panel button on patched UIs such as kimi-web-files), painting over those buttons and making them unclickable. The badge now measures the header's right-side cluster and anchors itself just left of it, recomputed live (MutationObserver + resize, rAF-throttled) as buttons appear/disappear, and vertically centered within the header. Pages without a chat header keep the original top-right corner fallback
@@ -170,6 +174,7 @@ Initial release: TUI statusline (cache + background refresh) and the web-UI Tamp
 ## Scope
 
 - Kimi For Coding plans only (the `api.kimi.com/coding` provider). For Claude Code with Kimi/GLM providers, see [cc-planbar](https://github.com/baigong-ai/cc-planbar)
+- Verified compatible with Kimi Code 0.31–0.35 (TUI statusline + web badge)
 - The statusline script requires Python 3 (stdlib only; 3.11+ recommended for the most tolerant ISO timestamp parsing)
 
 ## Acknowledgments
