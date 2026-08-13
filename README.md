@@ -95,6 +95,7 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 ### Caveats
 
 - The script relies on two web-UI internals: the `kimi-web.server-credential` localStorage key and the `/api/v1/oauth/usage` endpoint. If a future Kimi Code version changes either, the badge shows `quota ?` — updating the script should fix it
+- **Badge missing or showing `quota ?` right after a Kimi Code upgrade**: usually not a script bug — during the upgrade the server restarts, and a single 401 makes the web UI auto-logout and wipe the stored credential. Re-open the web UI once via `/web` (or log in again on the auth page) and the badge recovers; no script update needed in most cases
 - Badge position: the badge auto-anchors just left of the chat header's right-side button cluster (git/PR pills, or the Files button added by UI patches), recomputed live as those buttons appear/disappear; on pages without a chat header it falls back to the top-right corner. To force a different spot, edit `placeBadge()` in the script
 - Kimi Code binds to 127.0.0.1 by default; the userscript matches `http://127.0.0.1/*` and `http://localhost/*`, any port
 
@@ -174,7 +175,7 @@ Initial release: TUI statusline (cache + background refresh) and the web-UI Tamp
 ## Scope
 
 - Kimi For Coding plans only (the `api.kimi.com/coding` provider). For Claude Code with Kimi/GLM providers, see [cc-planbar](https://github.com/baigong-ai/cc-planbar)
-- Verified compatible with Kimi Code 0.31–0.35 (TUI statusline + web badge)
+- Verified compatible with Kimi Code 0.31–0.36 (TUI statusline + web badge)
 - The statusline script requires Python 3 (stdlib only; 3.11+ recommended for the most tolerant ISO timestamp parsing)
 
 ## Acknowledgments

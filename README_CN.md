@@ -95,6 +95,7 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 ### 注意事项
 
 - 脚本依赖 web UI 的两个内部实现：localStorage 键 `kimi-web.server-credential` 和接口 `/api/v1/oauth/usage`。Kimi Code 未来版本如果改动其中任何一个，徽章会显示 `quota ?`，届时更新脚本即可
+- **升级 Kimi Code 后徽章消失/显示 `quota ?`**：多数情况不是脚本坏了，而是升级瞬间服务端重启，前端撞到一次 401 会自动登出并清掉浏览器里存的凭证。从 TUI 重新 `/web` 打开一次（或在登录页重新登录）即可恢复，一般不需要更新脚本
 - 徽章位置：徽章会自动锚定在聊天头部右侧按钮群（git/PR 按钮，或界面补丁加的 Files 按钮）的左边，按钮出现/消失时实时重算；在没有聊天头部的页面上回落到右上角。想强制改位置就编辑脚本里的 `placeBadge()`
 - Kimi Code 默认只绑 127.0.0.1；脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`，不限端口
 
@@ -174,7 +175,7 @@ Windows 修复，来自 [@shawn-0106t](https://github.com/shawn-0106t) 的实测
 ## 适用范围
 
 - 仅支持 Kimi For Coding 套餐（`api.kimi.com/coding`）。Claude Code + Kimi/智谱 GLM 的场景请用 [cc-planbar](https://github.com/baigong-ai/cc-planbar)
-- 已验证兼容 Kimi Code 0.31–0.35（TUI 状态栏 + web 徽章）
+- 已验证兼容 Kimi Code 0.31–0.36（TUI 状态栏 + web 徽章）
 - 状态栏脚本需要 Python 3（纯标准库；推荐 3.11+，ISO 时间解析最宽容）
 
 ## 致谢
