@@ -22,7 +22,7 @@ def _env_int(name, default, lo, hi):
         return default
 
 
-TTL = _env_int('QUOTA_TTL', 300, 15, 3600)  # seconds a cached quota string is fresh
+TTL = _env_int('QUOTA_TTL', 300, 30, 3600)  # seconds a cached quota string is fresh
 RETRY = 30         # seconds before retrying after a failed/in-flight refresh
 
 
