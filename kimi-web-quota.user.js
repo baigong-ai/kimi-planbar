@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Kimi Code Web - Quota Badge
 // @namespace    local.kimi-code
-// @version      1.5
+// @version      1.6
 // @description  Show Kimi For Coding plan quota (5h / week) as a floating badge on the Kimi Code web UI
 // @match        http://127.0.0.1/*
 // @match        http://localhost/*
+// @include      /^https?:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})(:\d+)?\/.*$/
 // @run-at       document-idle
 // @grant        none
 // ==/UserScript==
@@ -19,6 +20,11 @@
   // as a #token= URL) on every REST route — the old OAuth credential is
   // rejected with 401. After the web UI logs in, the new credential lands in
   // this same localStorage key, so reading it here still works.
+  //
+  // v0.37 note: the web server now binds 0.0.0.0, so the UI is often opened
+  // via the LAN IP (http://192.168.x.x:PORT/...) instead of 127.0.0.1 — the
+  // RFC1918 @include above covers that. Each origin has its own localStorage,
+  // so the #token= URL must be opened once on the LAN origin too.
   function readCred(store) {
     try {
       const raw = store.getItem(CRED_KEY);

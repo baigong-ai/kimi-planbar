@@ -97,7 +97,7 @@ The web UI served by `kimi web` exposes `GET /api/v1/oauth/usage` (same data as 
 - The script relies on two web-UI internals: the `kimi-web.server-credential` localStorage key and the `/api/v1/oauth/usage` endpoint. If a future Kimi Code version changes either, the badge shows `quota ?` — updating the script should fix it
 - **Badge missing or showing `quota ?` right after a Kimi Code upgrade**: usually not a script bug — during the upgrade the server restarts, and a single 401 makes the web UI auto-logout and wipe the stored credential. Re-open the web UI once via `/web` (or log in again on the auth page) and the badge recovers; no script update needed in most cases
 - Badge position: the badge auto-anchors just left of the chat header's right-side button cluster (git/PR pills, or the Files button added by UI patches), recomputed live as those buttons appear/disappear; on pages without a chat header it falls back to the top-right corner. To force a different spot, edit `placeBadge()` in the script
-- Kimi Code binds to 127.0.0.1 by default; the userscript matches `http://127.0.0.1/*` and `http://localhost/*`, any port
+- The userscript matches `http://127.0.0.1/*` and `http://localhost/*` (any port), plus private LAN addresses (`192.168.x.x` / `10.x.x.x` / `172.16-31.x.x`) via an `@include` rule — since Kimi Code 0.37 the web server binds 0.0.0.0 and the UI is often opened via the LAN IP. Note each origin has its own localStorage: if you switch from 127.0.0.1 to the LAN IP, open the `#token=` URL once on that origin so the credential is stored there
 
 ## Known upstream issue: Kimi Code rewrites `tui.toml`
 
@@ -118,6 +118,10 @@ printf '\n[status_line]\ncommand = "~/.kimi-code/scripts/quota-status.py"\n' >> 
 On Windows, use the Windows command form from the install section instead. The userscript badge is unaffected — it doesn't read `tui.toml`.
 
 ## Changelog
+
+### v1.1.7
+
+- **Userscript**: fixed the script never running when the web UI is opened via a LAN IP. Since Kimi Code 0.37 the web server binds 0.0.0.0 instead of 127.0.0.1, so the UI is often reached as `http://192.168.x.x:PORT/...` — the `@match` rules only covered `127.0.0.1` and `localhost`, so Tampermonkey never injected the script on those pages. Fix: an `@include` rule covering the RFC1918 private ranges (`192.168.x.x` / `10.x.x.x` / `172.16-31.x.x`). Note that each origin has its own localStorage — when switching to the LAN-IP origin, open the `#token=` URL there once so the credential is stored. Verified on Kimi Code 0.37.2
 
 ### v1.1.6
 

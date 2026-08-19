@@ -97,7 +97,7 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 - 脚本依赖 web UI 的两个内部实现：localStorage 键 `kimi-web.server-credential` 和接口 `/api/v1/oauth/usage`。Kimi Code 未来版本如果改动其中任何一个，徽章会显示 `quota ?`，届时更新脚本即可
 - **升级 Kimi Code 后徽章消失/显示 `quota ?`**：多数情况不是脚本坏了，而是升级瞬间服务端重启，前端撞到一次 401 会自动登出并清掉浏览器里存的凭证。从 TUI 重新 `/web` 打开一次（或在登录页重新登录）即可恢复，一般不需要更新脚本
 - 徽章位置：徽章会自动锚定在聊天头部右侧按钮群（git/PR 按钮，或界面补丁加的 Files 按钮）的左边，按钮出现/消失时实时重算；在没有聊天头部的页面上回落到右上角。想强制改位置就编辑脚本里的 `placeBadge()`
-- Kimi Code 默认只绑 127.0.0.1；脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`，不限端口
+- 脚本匹配 `http://127.0.0.1/*` 和 `http://localhost/*`（不限端口），另有一条 `@include` 规则覆盖内网地址（`192.168.x.x` / `10.x.x.x` / `172.16-31.x.x`）——Kimi Code 0.37 起 web 服务绑 0.0.0.0，界面经常是通过局域网 IP 打开的。注意每个源的 localStorage 互相独立：从 127.0.0.1 换成局域网 IP 访问时，需要在该源上用 `#token=` URL 打开一次，把凭证存进去
 
 ## 已知问题（上游）：Kimi Code 会重写 `tui.toml`
 
@@ -118,6 +118,10 @@ printf '\n[status_line]\ncommand = "~/.kimi-code/scripts/quota-status.py"\n' >> 
 Windows 用户把 command 换成上面 Windows 版的写法。油猴徽章不受影响——它不读 `tui.toml`。
 
 ## 更新日志
+
+### v1.1.7
+
+- **油猴脚本**：修复通过局域网 IP 打开 web UI 时脚本完全不运行的问题。Kimi Code 0.37 起 web 服务绑 0.0.0.0（之前只绑 127.0.0.1），界面经常是以 `http://192.168.x.x:PORT/...` 形式打开的——而 `@match` 只覆盖 `127.0.0.1` 和 `localhost`，油猴根本不会往这些页面注入脚本。修复：新增一条 `@include` 规则覆盖 RFC1918 私网段（`192.168.x.x` / `10.x.x.x` / `172.16-31.x.x`）。注意每个源的 localStorage 互相独立——换到局域网 IP 访问时，需要在该源上用 `#token=` URL 打开一次存入凭证。已在 Kimi Code 0.37.2 上验证
 
 ### v1.1.6
 
