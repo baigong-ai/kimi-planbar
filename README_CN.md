@@ -70,7 +70,8 @@ command = "python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py"
 
 - 状态栏各段（从左到右）：权限模式（快照 `permissionMode`，会话内切换实时反映）→ 模型名 → thinking 级别 → 额度 → 当前目录 → git 分支（快照 `gitBranch`）
 - thinking 级别不在 stdin 快照里，脚本从 `~/.kimi-code/config.toml` 的 `[thinking]` 读取：`effort` → 当前模型的 `default_effort` 兜底；`enabled = false` 时显示 `off`。注意：它反映的是配置文件值，会话内未写回配置的临时切换不会体现
-- 缓存文件：`~/.kimi-code/scripts/quota-cache`，TTL 5 分钟；刷新失败后 30 秒重试
+- 缓存文件：`~/.kimi-code/scripts/quota-cache`，TTL 默认 5 分钟；刷新失败后 30 秒重试。想要更实时的数字可设 `QUOTA_TTL`（秒，范围钳制在 30–3600），如 `QUOTA_TTL=60`
+- 环境变量继承自启动 Kimi Code 的那个 shell：可以在启动前 `export QUOTA_TTL=60`，或直接在 `tui.toml` 里内联：`command = "sh -c 'QUOTA_TTL=60 ~/.kimi-code/scripts/quota-status.py'"`。Windows 下用 `set QUOTA_TTL=60`（cmd）/ `$env:QUOTA_TTL=60`（PowerShell）后再启动，或写成 `command = "cmd /c \"set QUOTA_TTL=60&& python C:/Users/<你的用户名>/.kimi-code/scripts/quota-status.py\""`
 - 排查快照 schema 时：设 `QUOTA_DEBUG=1` 后脚本会把最近一次 stdin 快照写到 `~/.kimi-code/scripts/last-stdin.json`（默认关闭，避免每秒一次磁盘写入）
 - 月度额度：Kimi 接口的 `totalQuota` 字段有值时自动显示 `month X%`
 - 颜色阈值想改：编辑 `quota-status.py` 里的 `col()` 函数

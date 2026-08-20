@@ -70,7 +70,8 @@ and calls `GET https://api.kimi.com/coding/v1/usages` with it.
 
 - Segments, left to right: permission mode (snapshot `permissionMode`, reflects in-session switches live) → model → thinking effort → quota → cwd → git branch (snapshot `gitBranch`)
 - The thinking effort is not in the stdin snapshot; the script reads it from `~/.kimi-code/config.toml` `[thinking]`: `effort`, falling back to the current model's `default_effort`; shows `off` when `enabled = false`. Note this reflects the config file — transient in-session changes that aren't written back won't show
-- Cache: `~/.kimi-code/scripts/quota-cache`, TTL 5 minutes; failed refreshes retry after 30s
+- Cache: `~/.kimi-code/scripts/quota-cache`, TTL 5 minutes by default; failed refreshes retry after 30s. Set `QUOTA_TTL` (seconds, clamped to 30–3600) for fresher numbers, e.g. `QUOTA_TTL=60`
+- Env vars are inherited from the shell that launches Kimi Code, so either `export QUOTA_TTL=60` before starting it, or inline it in `tui.toml`: `command = "sh -c 'QUOTA_TTL=60 ~/.kimi-code/scripts/quota-status.py'"`. On Windows use `set QUOTA_TTL=60` (cmd) / `$env:QUOTA_TTL=60` (PowerShell) before launching, or `command = "cmd /c \"set QUOTA_TTL=60&& python C:/Users/<you>/.kimi-code/scripts/quota-status.py\""`
 - To debug the snapshot schema: set `QUOTA_DEBUG=1` and the script writes the last stdin snapshot to `~/.kimi-code/scripts/last-stdin.json` (off by default, to avoid a disk write per second)
 - Monthly quota: shown automatically as `month X%` when the `totalQuota` field is populated
 - To change color thresholds: edit the `col()` function in `quota-status.py`
