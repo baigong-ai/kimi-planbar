@@ -119,6 +119,10 @@ Windows 用户把 command 换成上面 Windows 版的写法。油猴徽章不受
 
 ## 更新日志
 
+### v1.1.8
+
+- **油猴脚本**：修复徽章在 Kimi Code 0.38 上完全不出现的问题。0.38 起服务端不再对 REST 路由（含 `/api/v1/oauth/usage`）鉴权，且前端现在会**删除** localStorage 中过期的凭证（此前是保留）——于是一个正常工作的 web UI 里常常根本没有任何已存凭证，而脚本见到无凭证就直接静默退出（`credCandidates().length === 0 → return`），徽章从不渲染。修复：启动门槛从"是否有凭证"改为直接探测接口本身（无凭证时发一个不带 token 的请求，只有真正返回用量数据结构的 Kimi Code 服务才启动徽章，其他本地站点仍不受影响）；`fetchUsageAny` 增加无 token 裸请求兜底。已在 Kimi Code 0.38.0 上验证
+
 ### v1.1.7
 
 - **油猴脚本**：修复通过局域网 IP 打开 web UI 时脚本完全不运行的问题。Kimi Code 0.37 起 web 服务绑 0.0.0.0（之前只绑 127.0.0.1），界面经常是以 `http://192.168.x.x:PORT/...` 形式打开的——而 `@match` 只覆盖 `127.0.0.1` 和 `localhost`，油猴根本不会往这些页面注入脚本。修复：新增一条 `@include` 规则覆盖 RFC1918 私网段（`192.168.x.x` / `10.x.x.x` / `172.16-31.x.x`）。注意每个源的 localStorage 互相独立——换到局域网 IP 访问时，需要在该源上用 `#token=` URL 打开一次存入凭证。已在 Kimi Code 0.37.2 上验证
@@ -179,7 +183,7 @@ Windows 修复，来自 [@shawn-0106t](https://github.com/shawn-0106t) 的实测
 ## 适用范围
 
 - 仅支持 Kimi For Coding 套餐（`api.kimi.com/coding`）。Claude Code + Kimi/智谱 GLM 的场景请用 [cc-planbar](https://github.com/baigong-ai/cc-planbar)
-- 已验证兼容 Kimi Code 0.31–0.36（TUI 状态栏 + web 徽章）
+- 已验证兼容 Kimi Code 0.31–0.38（TUI 状态栏 + web 徽章）
 - 状态栏脚本需要 Python 3（纯标准库；推荐 3.11+，ISO 时间解析最宽容）
 
 ## 致谢

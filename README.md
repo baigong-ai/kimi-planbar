@@ -119,6 +119,10 @@ On Windows, use the Windows command form from the install section instead. The u
 
 ## Changelog
 
+### v1.1.8
+
+- **Userscript**: fixed the badge never appearing on Kimi Code 0.38. Since 0.38 the server no longer requires auth on REST routes (including `/api/v1/oauth/usage`), and the frontend now *deletes* expired credentials from localStorage (previously it kept them) — so a healthy web UI often has no stored credential at all, and the script's boot gate (`credCandidates().length === 0 → return`) silently exited before ever rendering the badge. Fix: the boot gate now probes the endpoint itself (with no stored credential it sends a bare request and only starts when the response has the usage payload shape, so other local sites stay untouched), and `fetchUsageAny` falls back to an unauthenticated request. Verified on Kimi Code 0.38.0
+
 ### v1.1.7
 
 - **Userscript**: fixed the script never running when the web UI is opened via a LAN IP. Since Kimi Code 0.37 the web server binds 0.0.0.0 instead of 127.0.0.1, so the UI is often reached as `http://192.168.x.x:PORT/...` — the `@match` rules only covered `127.0.0.1` and `localhost`, so Tampermonkey never injected the script on those pages. Fix: an `@include` rule covering the RFC1918 private ranges (`192.168.x.x` / `10.x.x.x` / `172.16-31.x.x`). Note that each origin has its own localStorage — when switching to the LAN-IP origin, open the `#token=` URL there once so the credential is stored. Verified on Kimi Code 0.37.2
@@ -179,7 +183,7 @@ Initial release: TUI statusline (cache + background refresh) and the web-UI Tamp
 ## Scope
 
 - Kimi For Coding plans only (the `api.kimi.com/coding` provider). For Claude Code with Kimi/GLM providers, see [cc-planbar](https://github.com/baigong-ai/cc-planbar)
-- Verified compatible with Kimi Code 0.31–0.36 (TUI statusline + web badge)
+- Verified compatible with Kimi Code 0.31–0.38 (TUI statusline + web badge)
 - The statusline script requires Python 3 (stdlib only; 3.11+ recommended for the most tolerant ISO timestamp parsing)
 
 ## Acknowledgments
